@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import axios from "axios"; // Import axios for API requests
 import Swal from "sweetalert2"; // Import SweetAlert2
 import "sweetalert2/dist/sweetalert2.min.css"; // Import SweetAlert2 CSS
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"; // Import eye icons
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState(""); // Username state
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); // For loading state
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,15 +110,24 @@ const Register = () => {
                 >
                   Password
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full px-4 py-2 rounded-md border border-gray-700 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-primary transition duration-200 ease-in-out transform hover:bg-gray-700"
-                  placeholder="Password"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"} // Correct password visibility toggle
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1 block w-full px-4 py-2 rounded-md border border-gray-700 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-primary transition duration-200 ease-in-out transform hover:bg-gray-700"
+                    placeholder="Password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white focus:outline-none"
+                  >
+                    <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
+                  </button>
+                </div>
               </div>
             </div>
 

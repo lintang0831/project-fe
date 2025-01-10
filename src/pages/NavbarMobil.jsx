@@ -28,7 +28,9 @@ const NavbarMobil = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         // Logika logout
-        navigate("/login"); // Redirect ke halaman logout
+        localStorage.removeItem("authToken"); // Hapus token dari localStorage
+        localStorage.removeItem("adminData"); // Hapus data pengguna jika ada
+        navigate("/login"); // Redirect ke halaman login setelah logout
       }
     });
   };
@@ -90,7 +92,7 @@ const NavbarMobil = () => {
           Dashboard
         </Link>
         <Link
-          to="/mobil"
+          to="/datamobil"
           className="hover:text-primary transition duration-200 ease-linear"
           onClick={handleChange}
         >

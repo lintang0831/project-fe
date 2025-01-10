@@ -104,7 +104,7 @@ const Dashboard = () => {
       </main>
 
       {/* Footer Section */}
-      <footer className="bg-primary text-white py-8 mt-auto">
+      <footer className="bg-gray-800 text-gray-400 py-8 mt-auto">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
             &copy; 2024 WheelsDeal. All Rights Reserved.

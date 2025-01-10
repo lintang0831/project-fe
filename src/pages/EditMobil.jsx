@@ -1,128 +1,173 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+import { useNavigate, useParams } from "react-router-dom";
 
-const EditMobil = ({ onEditCar, onClose, carToEdit }) => {
-  const [editedCar, setEditedCar] = useState({
-    photo: "",
-    brand: "",
-    licensePlate: "",
-    year: "",
-    model: "",
-    color: "",
+const EditMobil = ({ onEditCar, onClose }) => {
+  const [car, setCar] = useState({
+    namaMobil: "",
+    hargaMobil: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [idAdmin, setIdAdmin] = useState(null);
+  const { id } = useParams(); // Get the car ID from the URL
+  const navigate = useNavigate();
 
-  // Initialize state with carToEdit data when component mounts
   useEffect(() => {
-    if (carToEdit) {
-      setEditedCar({
-        photo: carToEdit.photo || "",
-        brand: carToEdit.brand || "",
-        licensePlate: carToEdit.licensePlate || "",
-        year: carToEdit.year || "",
-        model: carToEdit.model || "",
-        color: carToEdit.color || "",
-      });
+    // Get admin data from localStorage
+    const adminData = JSON.parse(localStorage.getItem("adminData"));
+    if (adminData) {
+      setIdAdmin(adminData.id); // Set the admin ID from the adminData object
     }
-  }, [carToEdit]);
 
-  // Handler for form input changes
+    // Fetch the car details by ID
+    const fetchCarDetails = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/api/admin/mobil/getById/${id}`
+        );
+        setCar({
+          namaMobil: response.data.namaMobil,
+          hargaMobil: response.data.hargaMobil,
+        });
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: "Mobil tidak ditemukan.",
+          confirmButtonText: "OK",
+        });
+        navigate("/datamobil");
+      }
+    };
+
+    fetchCarDetails();
+  }, [id, navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditedCar((prevCar) => ({
+    setCar((prevCar) => ({
       ...prevCar,
       [name]: value,
     }));
   };
 
-  // Handler for saving edited car details
-  const handleEditCar = () => {
-    // Validate that all fields are filled
-    if (
-      !editedCar.photo ||
-      !editedCar.brand ||
-      !editedCar.licensePlate ||
-      !editedCar.year ||
-      !editedCar.model ||
-      !editedCar.color
-    ) {
-      alert("Please fill in all fields.");
-      return; // Don't proceed if any field is missing
+  const handleEditCar = async () => {
+    if (!car.namaMobil || !car.hargaMobil) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Harap lengkapi semua kolom!",
+        confirmButtonText: "OK",
+      });
+      return;
     }
 
-    const updatedCar = { ...editedCar, id: carToEdit.id }; // Keep the original car ID
-    onEditCar(updatedCar); // Pass updated car data to parent
-    onClose(); // Close modal after editing
+    if (!idAdmin) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "ID Admin tidak ditemukan. Harap login terlebih dahulu.",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    console.log("Submitting data:", {
+      idAdmin,
+      namaMobil: car.namaMobil,
+      hargaMobil: car.hargaMobil,
+    });
+
+    try {
+      // Send the data directly, not wrapped in `mobilDTO`
+      const response = await axios.put(
+        `http://localhost:8080/api/admin/mobil/editById/${id}?idAdmin=${idAdmin}`,
+        {
+          namaMobil: car.namaMobil,
+          hargaMobil: parseFloat(car.hargaMobil), // Ensure the price is a number
+        }
+      );
+
+      console.log("Response after edit:", response.data);
+
+      // Assuming the response contains the updated car object
+      const updatedCar = response.data;
+
+      // Update state with the new data
+      setCar({
+        namaMobil: updatedCar.namaMobil,
+        hargaMobil: updatedCar.hargaMobil.toString(), // Convert price to string for input
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil Mengedit Mobil!",
+        text: "Mobil berhasil diperbarui.",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Pass the updated car data to the parent component
+        onEditCar?.(updatedCar);
+        onClose?.();
+        navigate("/datamobil");
+      });
+    } catch (error) {
+      console.log("Error during update:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mengedit Mobil!",
+        text: error.response?.data?.error || "Terjadi kesalahan, coba lagi.",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-      <div className="bg-white rounded-xl shadow-xl p-10 w-full sm:w-96 max-w-2xl transition-transform transform scale-105 hover:scale-100">
+      <div className="bg-white rounded-xl shadow-xl p-10 w-full sm:w-96 max-w-2xl">
         <h3 className="text-3xl font-extrabold text-center text-gray-800 mb-8">
           Edit Mobil
         </h3>
-
-        {/* Input fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-          {[
-            {
-              label: "Foto",
-              name: "photo",
-              type: "text",
-              placeholder: "Masukkan URL foto",
-            },
-            {
-              label: "Merk Mobil",
-              name: "brand",
-              type: "text",
-              placeholder: "Masukkan merk mobil",
-            },
-            {
-              label: "Plat Nomor",
-              name: "licensePlate",
-              type: "text",
-              placeholder: "Masukkan plat nomor",
-            },
-            {
-              label: "Tahun Mobil",
-              name: "year",
-              type: "text",
-              placeholder: "Masukkan tahun mobil",
-            },
-            {
-              label: "Model Mobil",
-              name: "model",
-              type: "text",
-              placeholder: "Masukkan model mobil",
-            },
-            {
-              label: "Warna Mobil",
-              name: "color",
-              type: "text",
-              placeholder: "Masukkan warna mobil",
-            },
-          ].map((field, idx) => (
-            <div key={idx} className="flex flex-col space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                {field.label}
-              </label>
-              <input
-                type={field.type}
-                name={field.name}
-                value={editedCar[field.name]}
-                onChange={handleChange}
-                className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
-                placeholder={field.placeholder}
-              />
-            </div>
-          ))}
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Nama Mobil
+            </label>
+            <input
+              type="text"
+              name="namaMobil"
+              value={car.namaMobil}
+              onChange={handleChange}
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Masukkan nama mobil"
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Harga Mobil
+            </label>
+            <input
+              type="number"
+              name="hargaMobil"
+              value={car.hargaMobil}
+              onChange={handleChange}
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Masukkan harga mobil"
+            />
+          </div>
         </div>
-
-        {/* Centered Button */}
         <div className="flex justify-center mt-8">
           <button
             onClick={handleEditCar}
-            className="px-8 py-3 bg-[#3B82F6] text-white rounded-lg shadow-md hover:opacity-80 focus:outline-none focus:ring-4 focus:ring-indigo-500 transition duration-300 transform hover:scale-105"
+            disabled={loading}
+            className="px-8 py-3 bg-blue-500 text-white rounded-lg shadow-md hover:opacity-80"
           >
-            Simpan Perubahan
+            {loading ? "Loading..." : "Edit Mobil"}
           </button>
         </div>
       </div>
