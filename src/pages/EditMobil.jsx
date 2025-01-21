@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
 import { useNavigate, useParams } from "react-router-dom";
 
 const EditMobil = ({ onEditCar, onClose }) => {
   const [car, setCar] = useState({
     namaMobil: "",
     hargaMobil: "",
+    fotoUrl: "",
   });
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
   const [idAdmin, setIdAdmin] = useState(null);
-  const { id } = useParams(); // Get the car ID from the URL
+  const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get admin data from localStorage
     const adminData = JSON.parse(localStorage.getItem("adminData"));
     if (adminData) {
-      setIdAdmin(adminData.id); // Set the admin ID from the adminData object
+      setIdAdmin(adminData.id);
     }
 
-    // Fetch the car details by ID
     const fetchCarDetails = async () => {
       try {
         const response = await axios.get(
@@ -30,6 +29,7 @@ const EditMobil = ({ onEditCar, onClose }) => {
         setCar({
           namaMobil: response.data.namaMobil,
           hargaMobil: response.data.hargaMobil,
+          fotoUrl: response.data.fotoUrl,
         });
       } catch (error) {
         Swal.fire({
@@ -51,6 +51,10 @@ const EditMobil = ({ onEditCar, onClose }) => {
       ...prevCar,
       [name]: value,
     }));
+  };
+
+  const handleImageChange = (e) => {
+    setImage(e.target.files[0]);
   };
 
   const handleEditCar = async () => {
@@ -76,31 +80,32 @@ const EditMobil = ({ onEditCar, onClose }) => {
 
     setLoading(true);
 
-    console.log("Submitting data:", {
-      idAdmin,
-      namaMobil: car.namaMobil,
-      hargaMobil: car.hargaMobil,
-    });
+    const formData = new FormData();
+    formData.append(
+      "mobil",
+      JSON.stringify({ namaMobil: car.namaMobil, hargaMobil: car.hargaMobil })
+    ); // Add the car details as JSON
+    if (image) {
+      formData.append("file", image);
+    }
 
     try {
-      // Send the data directly, not wrapped in `mobilDTO`
       const response = await axios.put(
         `http://localhost:8080/api/admin/mobil/editById/${id}?idAdmin=${idAdmin}`,
+        formData,
         {
-          namaMobil: car.namaMobil,
-          hargaMobil: parseFloat(car.hargaMobil), // Ensure the price is a number
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
-      console.log("Response after edit:", response.data);
-
-      // Assuming the response contains the updated car object
       const updatedCar = response.data;
 
-      // Update state with the new data
       setCar({
         namaMobil: updatedCar.namaMobil,
-        hargaMobil: updatedCar.hargaMobil.toString(), // Convert price to string for input
+        hargaMobil: updatedCar.hargaMobil.toString(),
+        fotoUrl: updatedCar.fotoUrl,
       });
 
       Swal.fire({
@@ -109,13 +114,11 @@ const EditMobil = ({ onEditCar, onClose }) => {
         text: "Mobil berhasil diperbarui.",
         confirmButtonText: "OK",
       }).then(() => {
-        // Pass the updated car data to the parent component
         onEditCar?.(updatedCar);
         onClose?.();
         navigate("/datamobil");
       });
     } catch (error) {
-      console.log("Error during update:", error);
       Swal.fire({
         icon: "error",
         title: "Gagal Mengedit Mobil!",
@@ -133,41 +136,54 @@ const EditMobil = ({ onEditCar, onClose }) => {
         <h3 className="text-3xl font-extrabold text-center text-gray-800 mb-8">
           Edit Mobil
         </h3>
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Nama Mobil
-            </label>
-            <input
-              type="text"
-              name="namaMobil"
-              value={car.namaMobil}
-              onChange={handleChange}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Masukkan nama mobil"
-            />
-          </div>
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Harga Mobil
-            </label>
-            <input
-              type="number"
-              name="hargaMobil"
-              value={car.hargaMobil}
-              onChange={handleChange}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Masukkan harga mobil"
-            />
-          </div>
+        <div>
+          <label htmlFor="namaMobil" className="text-gray-600">
+            Nama Mobil
+          </label>
+          <input
+            type="text"
+            id="namaMobil"
+            name="namaMobil"
+            className="w-full border-gray-400 p-2 mb-4 mt-2 rounded-md shadow-sm"
+            value={car.namaMobil}
+            onChange={handleChange}
+          />
         </div>
-        <div className="flex justify-center mt-8">
+        <div>
+          <label htmlFor="hargaMobil" className="text-gray-600">
+            Harga Mobil
+          </label>
+          <input
+            type="number"
+            id="hargaMobil"
+            name="hargaMobil"
+            className="w-full border-gray-400 p-2 mb-4 mt-2 rounded-md shadow-sm"
+            value={car.hargaMobil}
+            onChange={handleChange}
+          />
+        </div>
+        <div>
+          <label htmlFor="foto" className="text-gray-600">
+            Foto Mobil
+          </label>
+          <input
+            type="file"
+            id="foto"
+            name="foto"
+            accept="image/*"
+            className="w-full border-gray-400 p-2 mb-4 mt-2 rounded-md shadow-sm"
+            onChange={handleImageChange}
+          />
+        </div>
+        <div className="text-center">
           <button
             onClick={handleEditCar}
             disabled={loading}
-            className="px-8 py-3 bg-blue-500 text-white rounded-lg shadow-md hover:opacity-80"
+            className={`${
+              loading ? "bg-gray-300" : "bg-blue-500"
+            } text-white py-2 px-4 rounded-full hover:bg-blue-600 focus:outline-none`}
           >
-            {loading ? "Loading..." : "Edit Mobil"}
+            {loading ? "Memproses..." : "Simpan Perubahan"}
           </button>
         </div>
       </div>

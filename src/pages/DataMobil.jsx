@@ -96,6 +96,7 @@ const DataMobil = () => {
               <thead className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white">
                 <tr>
                   <th className="px-6 py-3 text-left">No</th>
+                  <th className="px-6 py-3 text-left">Gambar Mobil</th>
                   <th className="px-6 py-3 text-left">Nama Mobil</th>
                   <th className="px-6 py-3 text-left">Harga Mobil</th>
                   <th className="px-6 py-3 text-center">Aksi</th>
@@ -125,6 +126,18 @@ const DataMobil = () => {
                       } border-b border-gray-200 hover:bg-gray-200 transition`}
                     >
                       <td className="px-6 py-4 text-center">{index + 1}</td>
+                      <td className="px-6 py-4">
+                        {/* Display the image using fotoUrl */}
+                        {car.fotoUrl ? (
+                          <img
+                            src={car.fotoUrl}
+                            alt={car.namaMobil}
+                            className="w-16 h-16 object-cover rounded"
+                          />
+                        ) : (
+                          <span>No Image</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4">{car.namaMobil}</td>
                       <td className="px-6 py-4">Rp {car.hargaMobil}</td>
                       <td className="px-6 py-4 text-center space-x-4">

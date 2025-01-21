@@ -4,20 +4,21 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { useNavigate } from "react-router-dom";
 
-const TambahMobil = ({ onAddCar, onClose }) => {
+const TambahMobil = () => {
   const [newCar, setNewCar] = useState({
     namaMobil: "",
     hargaMobil: "",
+    fotoUrl: "", // Tambahkan fotoUrl ke state
   });
+  const [foto, setFoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [idAdmin, setIdAdmin] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get admin data from localStorage
     const adminData = JSON.parse(localStorage.getItem("adminData"));
     if (adminData) {
-      setIdAdmin(adminData.id); // Set the admin ID from the adminData object
+      setIdAdmin(adminData.id);
     }
   }, []);
 
@@ -29,22 +30,16 @@ const TambahMobil = ({ onAddCar, onClose }) => {
     }));
   };
 
-  const handleAddCar = async () => {
-    if (!newCar.namaMobil || !newCar.hargaMobil) {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal",
-        text: "Harap lengkapi semua kolom!",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
+  const handleFileChange = (e) => {
+    setFoto(e.target.files[0]);
+  };
 
-    if (!idAdmin) {
+  const handleAddCar = async () => {
+    if (!newCar.namaMobil || !newCar.hargaMobil || !foto) {
       Swal.fire({
         icon: "error",
         title: "Gagal",
-        text: "ID Admin tidak ditemukan. Harap login terlebih dahulu.",
+        text: "Harap lengkapi semua kolom dan unggah foto!",
         confirmButtonText: "OK",
       });
       return;
@@ -53,29 +48,32 @@ const TambahMobil = ({ onAddCar, onClose }) => {
     setLoading(true);
 
     try {
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("mobil", JSON.stringify(newCar)); // Add the car data as a JSON string
+      formData.append("file", foto); // Add the selected photo
+
+      // Log to check if formData is set correctly
+      console.log("FormData:", formData);
+
       const response = await axios.post(
         `http://localhost:8080/api/admin/mobil/tambah/${idAdmin}`,
-        {
-          namaMobil: newCar.namaMobil,
-          hargaMobil: parseFloat(newCar.hargaMobil),
-        }
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       Swal.fire({
         icon: "success",
-        title: "Berhasil Menambahkan Mobil!",
+        title: "Berhasil!",
         text: "Mobil berhasil ditambahkan.",
         confirmButtonText: "OK",
-      }).then(() => {
-        onAddCar?.({ ...newCar, id: response.data.id });
-        onClose?.();
-        navigate("/datamobil");
-      });
+      }).then(() => navigate("/datamobil"));
     } catch (error) {
+      console.error("Error:", error);
       Swal.fire({
         icon: "error",
         title: "Gagal Menambahkan Mobil!",
-        text: error.response?.data?.error || "Terjadi kesalahan, coba lagi.",
+        text: error.response?.data?.error || "Terjadi kesalahan.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -99,7 +97,7 @@ const TambahMobil = ({ onAddCar, onClose }) => {
               name="namaMobil"
               value={newCar.namaMobil}
               onChange={handleChange}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg"
               placeholder="Masukkan nama mobil"
             />
           </div>
@@ -112,8 +110,19 @@ const TambahMobil = ({ onAddCar, onClose }) => {
               name="hargaMobil"
               value={newCar.hargaMobil}
               onChange={handleChange}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg"
               placeholder="Masukkan harga mobil"
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Foto Mobil
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg"
             />
           </div>
         </div>
@@ -121,7 +130,7 @@ const TambahMobil = ({ onAddCar, onClose }) => {
           <button
             onClick={handleAddCar}
             disabled={loading}
-            className="px-8 py-3 bg-blue-500 text-white rounded-lg shadow-md hover:opacity-80"
+            className="px-8 py-3 bg-blue-500 text-white rounded-lg hover:opacity-80"
           >
             {loading ? "Loading..." : "Tambah Mobil"}
           </button>
