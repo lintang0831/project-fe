@@ -11,6 +11,7 @@ const EditMobil = ({ onEditCar, onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [idAdmin, setIdAdmin] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -54,15 +55,22 @@ const EditMobil = ({ onEditCar, onClose }) => {
   };
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    setImage(file);
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleEditCar = async () => {
-    if (!car.namaMobil || !car.hargaMobil) {
+    if (!car.namaMobil || !car.hargaMobil || parseFloat(car.hargaMobil) <= 0) {
       Swal.fire({
         icon: "error",
         title: "Gagal",
-        text: "Harap lengkapi semua kolom!",
+        text: "Harap lengkapi semua kolom dengan benar!",
         confirmButtonText: "OK",
       });
       return;
@@ -84,14 +92,14 @@ const EditMobil = ({ onEditCar, onClose }) => {
     formData.append(
       "mobil",
       JSON.stringify({ namaMobil: car.namaMobil, hargaMobil: car.hargaMobil })
-    ); // Add the car details as JSON
+    );
     if (image) {
       formData.append("file", image);
     }
 
     try {
       const response = await axios.put(
-        `http://localhost:8080/api/admin/mobil/editById/${id}?idAdmin=${idAdmin}`,
+        `http://localhost:8080/api/admin/mobil/edit/${id}/${idAdmin}`,
         formData,
         {
           headers: {
@@ -174,8 +182,23 @@ const EditMobil = ({ onEditCar, onClose }) => {
             className="w-full border-gray-400 p-2 mb-4 mt-2 rounded-md shadow-sm"
             onChange={handleImageChange}
           />
+          {preview && (
+            <div className="mt-2">
+              <img
+                src={preview}
+                alt="Preview Gambar"
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+          )}
         </div>
-        <div className="text-center">
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={onClose}
+            className="bg-gray-400 text-white py-2 px-4 rounded-full hover:bg-gray-500 focus:outline-none"
+          >
+            Batal
+          </button>
           <button
             onClick={handleEditCar}
             disabled={loading}
